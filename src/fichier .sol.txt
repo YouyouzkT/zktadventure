@@ -1,0 +1,401 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+// Importation de la bibliothèque OpenZeppelin Strings
+import "@openzeppelin/contracts/utils/Strings.sol";
+
+contract Adventure {
+    uint public adventureCounter;
+    uint constant MAX_CHOICES = 3;
+
+    struct Adventurer {
+        bool isAlive;
+        string pseudo;
+        uint currentStep;
+        mapping(uint => uint) choices; // Mapping des choix par étape
+    }
+
+    struct AdventureDetails {
+        uint stepCount;
+        uint intervalTime;
+        bool isActive;
+        bool configStarted;
+        uint lastResolvedStep;
+        mapping(uint => uint[]) stepOptions; // Options pour chaque étape
+        mapping(uint => uint) winningChoices; // Résultat du tirage pour chaque étape
+        address creator; // Ajout de l'adresse du créateur de l'aventure
+        address[] players; // Liste des joueurs inscrits
+        address[] deadPlayers;
+        address[] winners;
+        mapping(string => bool) pseudoUsed; // Suivi des pseudos utilisés
+        mapping(address => bool) isAlive; // Suivi des joueurs vivants
+    }
+
+    mapping(uint => AdventureDetails) public adventures;
+    mapping(uint => mapping(address => Adventurer)) public registeredAdventurers;
+
+    event AdventureCreated(uint adventureID);
+    event PlayerRegistered(uint adventureID, address player, string pseudo);
+    event StepResolved(uint adventureID, uint stepNumber, uint winningChoice);
+    event PlayerKilled(uint adventureID, address player);
+
+    // Modifier pour vérifier si l'aventure est active
+    modifier onlyActiveAdventure(uint adventureID) {
+        require(adventures[adventureID].isActive, "Adventure not active.");
+        _;
+    }
+
+    // Modifier pour vérifier si l'appelant est le créateur de l'aventure
+    modifier onlyCreator(uint adventureID) {
+        require(adventures[adventureID].creator == msg.sender, "Caller is not the creator of the adventure.");
+        _;
+    }
+
+    // Création d'une nouvelle aventure
+    function createAdventure() public {
+        adventureCounter++;
+        AdventureDetails storage adventure = adventures[adventureCounter];
+        
+        // Initialise l'aventure avec un stepCount par défaut de 1
+        adventure.stepCount = 1;
+        adventure.creator = msg.sender; // Enregistre le créateur de l'aventure
+        emit AdventureCreated(adventureCounter);
+    }
+
+    // Définit le nombre d'étapes pour une aventure spécifique (accessible uniquement au créateur)
+    function setStepCount(uint adventureID, uint stepCount) public onlyCreator(adventureID) {
+        AdventureDetails storage adventure = adventures[adventureID];
+        
+        // Vérifie que l'ID d'aventure existe
+        require(adventure.stepCount > 0, string(abi.encodePacked("Adventure ID ", Strings.toString(adventureID), " does not exist.")));
+        
+        // Empêche la modification si l'aventure a déjà commencé
+        require(!adventure.isActive, "Adventure has already started.");
+        
+        // Empêche la modification si configStep a déjà été appelé
+        require(!adventure.configStarted, "Step count cannot be modified after configuration has started.");
+        
+        adventure.stepCount = stepCount;
+    }
+
+    // Définit l'intervalle de temps entre chaque étape (accessible uniquement au créateur)
+    function configTime(uint adventureID, uint intervalTime) public onlyCreator(adventureID) {
+        AdventureDetails storage adventure = adventures[adventureID];
+        
+        // Empêche la modification si l'aventure a déjà commencé
+        require(!adventure.isActive, "Adventure has already started.");
+        
+        adventure.intervalTime = intervalTime;
+    }
+
+    // Configure une étape (accessible uniquement au créateur)
+    function configStep(uint adventureID, uint stepNumber, uint[3] memory options) public onlyCreator(adventureID) {
+        AdventureDetails storage adventure = adventures[adventureID];
+        
+        // Vérifie que l'ID d'aventure existe
+        require(adventure.stepCount > 0, string(abi.encodePacked("Adventure ID ", Strings.toString(adventureID), " does not exist.")));
+        
+        // Vérifie que le nombre d'étapes a été défini
+        require(adventure.stepCount > 0, "Step count not set. Please call setStepCount first.");
+
+        // Vérifie que le stepNumber est valide
+        require(stepNumber > 0 && stepNumber <= adventure.stepCount, "Invalid step number.");
+
+        // Empêche la modification si l'aventure a déjà commencé
+        require(!adventure.isActive, "Adventure has already started.");
+        
+        // Vérifie que trois choix sont bien fournis pour chaque étape
+        require(options.length == MAX_CHOICES, "Exactly 3 choices are required for each step.");
+        
+        // Vérifie que toutes les options sont des valeurs numériques valides (> 0)
+        for (uint i = 0; i < MAX_CHOICES; i++) {
+            require(options[i] > 0, "All options must be positive numbers.");
+            require(options[i] == uint(options[i]), "All options must be numbers.");
+        }
+        
+        // Marque que la configuration a commencé
+        adventure.configStarted = true;
+
+        adventure.stepOptions[stepNumber] = options;
+    }
+
+    // Démarre l'aventure (accessible uniquement au créateur)
+    function startAdventure(uint adventureID) public onlyCreator(adventureID) {
+        AdventureDetails storage adventure = adventures[adventureID];
+        
+        // Vérifie que l'ID de l'aventure existe
+        require(adventure.stepCount > 0, string(abi.encodePacked("Adventure ID ", Strings.toString(adventureID), " does not exist.")));
+
+        // Vérifie que l'aventure n'a pas déjà été démarrée
+        require(!adventure.isActive, "Adventure has already started.");
+
+        // Vérifie que stepCount a été défini
+        require(adventure.stepCount > 0, "Step count not set.");
+
+        // Vérifie que toutes les étapes sont correctement configurées avec trois choix
+        for (uint i = 1; i <= adventure.stepCount; i++) {
+            require(adventure.stepOptions[i].length == MAX_CHOICES, "Step not fully configured.");
+        }
+        
+        // Active l'aventure
+        adventure.isActive = true;
+    }
+
+    // Fonction pour obtenir les options d'une étape spécifique
+    function getStepChoices(uint adventureID, uint stepNumber) public view returns (uint[] memory) {
+        AdventureDetails storage adventure = adventures[adventureID];
+        
+        // Vérifie que l'ID de l'aventure existe
+        require(adventure.stepCount > 0, string(abi.encodePacked("Adventure ID ", Strings.toString(adventureID), " does not exist.")));
+        
+        // Vérifie que le stepNumber est valide
+        require(stepNumber > 0 && stepNumber <= adventure.stepCount, "Invalid step number.");
+        
+        return adventure.stepOptions[stepNumber];
+    }
+
+    // Fonction pour obtenir le choix enregistré d'un joueur pour une étape spécifique
+    function getYourChoice(uint adventureID, uint stepNumber) public view returns (uint) {
+        AdventureDetails storage adventure = adventures[adventureID];
+        
+        // Vérifie que l'ID de l'aventure existe
+        require(adventure.stepCount > 0, string(abi.encodePacked("Adventure ID ", Strings.toString(adventureID), " does not exist.")));
+        
+        // Vérifie que le joueur est enregistré
+        require(bytes(registeredAdventurers[adventureID][msg.sender].pseudo).length > 0, "Not registered.");
+        
+        // Vérifie que l'étape est valide
+        require(stepNumber > 0 && stepNumber <= adventure.stepCount, "Invalid step number.");
+        
+        return registeredAdventurers[adventureID][msg.sender].choices[stepNumber];
+    }
+
+    // Inscrit un joueur dans une aventure et le marque comme vivant
+    function register(uint adventureID, string memory pseudo) public {
+    AdventureDetails storage adventure = adventures[adventureID];
+    
+        // Vérifie que l'ID de l'aventure existe
+        require(adventure.stepCount > 0, string(abi.encodePacked("Adventure ID ", Strings.toString(adventureID), " does not exist.")));
+
+        // Vérifie que l'aventure est active
+        require(adventure.isActive, "Adventure not active.");
+    
+        // Vérifie que l'aventure est encore à la première étape
+        require(adventure.lastResolvedStep == 0, "Registration closed. Adventure already started.");
+    
+        // Vérifie qu'un pseudo est fourni
+        require(bytes(pseudo).length > 0, "A pseudo must be provided.");
+
+        // Vérifie que le pseudo n'est pas déjà utilisé
+        require(!adventure.pseudoUsed[pseudo], "Pseudo already registered by another player.");
+        adventure.pseudoUsed[pseudo] = true; // Marque le pseudo comme utilisé
+
+        // Vérifie que le joueur n'est pas déjà inscrit
+        require(!registeredAdventurers[adventureID][msg.sender].isAlive, "Already registered.");
+    
+        // Initialiser chaque champ individuellement
+        Adventurer storage adventurer = registeredAdventurers[adventureID][msg.sender];
+        adventurer.isAlive = true;
+        adventurer.pseudo = pseudo;
+        adventurer.currentStep = 0;
+
+        adventure.isAlive[msg.sender] = true; // Marque le joueur comme vivant
+        adventure.players.push(msg.sender); // Ajoute le joueur à la liste des joueurs inscrits
+    
+        emit PlayerRegistered(adventureID, msg.sender, pseudo);
+    }
+
+    // Permet à un joueur de faire un choix pour une étape spécifique
+    function makeChoice(uint adventureID, uint stepNumber, uint choice) public onlyActiveAdventure(adventureID) {
+        AdventureDetails storage adventure = adventures[adventureID];
+        
+        // Vérifie que l'ID d'aventure existe
+        require(adventure.stepCount > 0, string(abi.encodePacked("Adventure ID ", Strings.toString(adventureID), " does not exist.")));
+
+        // Vérifie que l'aventure est active
+        require(adventure.isActive, "Adventure not active.");
+
+        // Vérifie que le joueur est enregistré
+        Adventurer storage adventurer = registeredAdventurers[adventureID][msg.sender];
+        require(bytes(adventurer.pseudo).length > 0, "Not registered.");
+
+        // Vérifie que le joueur est vivant
+        require(adventurer.isAlive, "You are dead.");
+
+        // Vérifie que l'étape précédente est résolue globalement
+        require(stepNumber == adventure.lastResolvedStep + 1, "Previous step not resolved.");
+
+        // Vérifie que le joueur n'a pas déjà fait un choix pour cette étape
+        require(adventurer.choices[stepNumber] == 0, "Choice for this step already made.");
+
+        // Vérifie que le choix est parmi les options configurées
+        bool validChoice = false;
+        uint[] memory options = adventure.stepOptions[stepNumber];
+        for (uint i = 0; i < options.length; i++) {
+            if (choice == options[i]) {
+                validChoice = true;
+                break;
+            }
+        }
+        require(validChoice, "Invalid choice.");
+
+        // Met à jour le choix du joueur pour l'étape courante
+        adventurer.choices[stepNumber] = choice;
+        adventurer.currentStep = stepNumber;
+    }
+
+    // Résout une étape et détermine le choix gagnant
+    function resolvestep(uint adventureID, uint stepNumber) public onlyCreator(adventureID) {
+        AdventureDetails storage adventure = adventures[adventureID];
+        
+        // Vérifie que l'ID d'aventure existe
+        require(adventure.stepCount > 0, string(abi.encodePacked("Adventure ID ", Strings.toString(adventureID), " does not exist.")));
+
+        // Vérifie que l'aventure a été démarrée
+        require(adventure.isActive, "Adventure has not started yet.");
+
+        // Vérifie que l'étape n'a pas déjà été résolue
+        require(stepNumber > adventure.lastResolvedStep, "Step already resolved.");
+        
+        // Vérifie que l'étape précédente est résolue
+        require(stepNumber == adventure.lastResolvedStep + 1, "Previous step not resolved.");
+        
+        // Vérifie que le temps imparti pour l'étape est écoulé
+        require(block.timestamp >= adventure.intervalTime, "Step time has not yet elapsed.");
+        
+        // Récupère les options pour cette étape et tire au sort l'index gagnant
+        uint[] memory options = adventure.stepOptions[stepNumber];
+        uint randomIndex = uint(keccak256(abi.encodePacked(block.timestamp, stepNumber, block.prevrandao))) % options.length;
+        uint winningChoice = options[randomIndex];
+
+        // Enregistre le résultat du tirage pour cette étape
+        adventure.winningChoices[stepNumber] = winningChoice;
+
+        // Parcourt les joueurs pour mettre à jour leur statut en fonction de leur choix
+        for (uint i = 0; i < adventure.players.length; i++) {
+            address player = adventure.players[i];
+            if (adventure.isAlive[player] && registeredAdventurers[adventureID][player].choices[stepNumber] != winningChoice) {
+                registeredAdventurers[adventureID][player].isAlive = false;
+                adventure.isAlive[player] = false;
+                adventure.deadPlayers.push(player);
+                emit PlayerKilled(adventureID, player);
+            }
+        }
+
+        // Met à jour l'étape comme résolue
+        adventure.lastResolvedStep = stepNumber;
+
+        // Si c'était le dernier step, marquer les joueurs vivants comme gagnants
+        if (stepNumber == adventure.stepCount) {
+            for (uint i = 0; i < adventure.players.length; i++) {
+                address player = adventure.players[i];
+                if (adventure.isAlive[player]) {
+                    adventure.winners.push(player);
+                }
+            }
+        }
+        
+        emit StepResolved(adventureID, stepNumber, winningChoice);
+    }
+
+    // Récupère les adresses et pseudos des joueurs vivants d'une aventure
+    function getAlivePlayersWithPseudo(uint adventureID) public view returns (address[] memory, string[] memory) {
+    AdventureDetails storage adventure = adventures[adventureID];
+    uint aliveCount = 0;
+
+    // Compter le nombre de joueurs vivants
+    for (uint i = 0; i < adventure.players.length; i++) {
+        if (adventure.isAlive[adventure.players[i]]) {
+            aliveCount++;
+        }
+    }
+
+    // Créer des tableaux pour les adresses et les pseudos des joueurs vivants
+    address[] memory addresses = new address[](aliveCount);
+    string[] memory pseudos = new string[](aliveCount);
+    uint index = 0;
+
+    // Remplir les tableaux avec les joueurs vivants
+    for (uint i = 0; i < adventure.players.length; i++) {
+        address player = adventure.players[i];
+        if (adventure.isAlive[player]) {
+            addresses[index] = player;
+            pseudos[index] = registeredAdventurers[adventureID][player].pseudo;
+            index++;
+        }
+    }
+
+    return (addresses, pseudos);
+    }
+
+    // Récupère le nombre de joueurs vivants
+    function getAlivePlayerCount(uint adventureID) public view returns (uint) {
+        AdventureDetails storage adventure = adventures[adventureID];
+        uint aliveCount = 0;
+        for (uint i = 0; i < adventure.players.length; i++) {
+            if (adventure.isAlive[adventure.players[i]]) {
+                aliveCount++;
+            }
+        }
+        return aliveCount;
+    }
+
+    // Récupère les adresses et pseudos des joueurs morts d'une aventure
+    function getDeadPlayersWithPseudo(uint adventureID) public view returns (address[] memory, string[] memory) {
+    AdventureDetails storage adventure = adventures[adventureID];
+    uint deadCount = adventure.deadPlayers.length;
+
+    // Créer des tableaux pour les adresses et les pseudos des joueurs morts
+    address[] memory addresses = new address[](deadCount);
+    string[] memory pseudos = new string[](deadCount);
+
+    // Remplir les tableaux avec les joueurs morts
+    for (uint i = 0; i < deadCount; i++) {
+        address player = adventure.deadPlayers[i];
+        addresses[i] = player;
+        pseudos[i] = registeredAdventurers[adventureID][player].pseudo;
+    }
+
+    return (addresses, pseudos);
+    }
+    
+    // Récupère les adresses et pseudos des joueurs gagnants d'une aventure
+    function getWinners(uint adventureID) public view returns (address[] memory, string[] memory) {
+    AdventureDetails storage adventure = adventures[adventureID];
+    uint winnerCount = adventure.winners.length;
+
+    // Créer des tableaux pour les adresses et les pseudos des gagnants
+    address[] memory addresses = new address[](winnerCount);
+    string[] memory pseudos = new string[](winnerCount);
+
+    // Remplir les tableaux avec les gagnants
+    for (uint i = 0; i < winnerCount; i++) {
+        address player = adventure.winners[i];
+        addresses[i] = player;
+        pseudos[i] = registeredAdventurers[adventureID][player].pseudo;
+    }
+
+    return (addresses, pseudos);
+    }
+
+    // Récupère le nombre de joueurs morts
+    function getDeadPlayerCount(uint adventureID) public view returns (uint) {
+        return adventures[adventureID].deadPlayers.length;
+    }
+
+    // Récupère le nombre de gagnants
+    function getWinnerCount(uint adventureID) public view returns (uint) {
+        return adventures[adventureID].winners.length;
+    }
+
+    // Récupère le nombre d'étapes pour une aventure donnée ainsi que les résultats de chaque étape
+    function getStepResults(uint adventureID) public view returns (uint, uint[] memory) {
+        AdventureDetails storage adventure = adventures[adventureID];
+        uint[] memory results = new uint[](adventure.stepCount);
+        for (uint i = 1; i <= adventure.stepCount; i++) {
+            results[i - 1] = adventure.winningChoices[i];
+        }
+        return (adventure.stepCount, results);
+    }
+
+}

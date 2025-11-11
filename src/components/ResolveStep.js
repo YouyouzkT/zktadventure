@@ -6,7 +6,7 @@ import Web3 from 'web3';
 
 function ResolveStep() {
   const { web3 } = useContext(WalletContext);
-  const contractAddress = "0x0771c885A2257C62211730bf98E17817ABb9CbD5";
+  const contractAddress = "0xb9119B26031E73932FdfAC205D814bb2A73CfcB2";
   const [adventureID, setAdventureID] = useState('');
   const [stepNumber, setStepNumber] = useState('');
   const [isResolving, setIsResolving] = useState(false);

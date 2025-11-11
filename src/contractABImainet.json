@@ -1,0 +1,514 @@
+[
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "adventureID",
+				"type": "uint256"
+			}
+		],
+		"name": "AdventureCreated",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "adventureID",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "stepNumber",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256[3]",
+				"name": "options",
+				"type": "uint256[3]"
+			}
+		],
+		"name": "configStep",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "adventureID",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "intervalTime",
+				"type": "uint256"
+			}
+		],
+		"name": "configTime",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "createAdventure",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "adventureID",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "stepNumber",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "choice",
+				"type": "uint256"
+			}
+		],
+		"name": "makeChoice",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "adventureID",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "player",
+				"type": "address"
+			}
+		],
+		"name": "PlayerKilled",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "adventureID",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "player",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "pseudo",
+				"type": "string"
+			}
+		],
+		"name": "PlayerRegistered",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "adventureID",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "pseudo",
+				"type": "string"
+			}
+		],
+		"name": "register",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "adventureID",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "stepNumber",
+				"type": "uint256"
+			}
+		],
+		"name": "resolvestep",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "adventureID",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "stepCount",
+				"type": "uint256"
+			}
+		],
+		"name": "setStepCount",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "adventureID",
+				"type": "uint256"
+			}
+		],
+		"name": "startAdventure",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "adventureID",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "stepNumber",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "winningChoice",
+				"type": "uint256"
+			}
+		],
+		"name": "StepResolved",
+		"type": "event"
+	},
+	{
+		"inputs": [],
+		"name": "adventureCounter",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "adventures",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "stepCount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "intervalTime",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bool",
+				"name": "isActive",
+				"type": "bool"
+			},
+			{
+				"internalType": "bool",
+				"name": "configStarted",
+				"type": "bool"
+			},
+			{
+				"internalType": "uint256",
+				"name": "lastResolvedStep",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "creator",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "adventureID",
+				"type": "uint256"
+			}
+		],
+		"name": "getAlivePlayerCount",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "adventureID",
+				"type": "uint256"
+			}
+		],
+		"name": "getAlivePlayersWithPseudo",
+		"outputs": [
+			{
+				"internalType": "address[]",
+				"name": "",
+				"type": "address[]"
+			},
+			{
+				"internalType": "string[]",
+				"name": "",
+				"type": "string[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "adventureID",
+				"type": "uint256"
+			}
+		],
+		"name": "getDeadPlayerCount",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "adventureID",
+				"type": "uint256"
+			}
+		],
+		"name": "getDeadPlayersWithPseudo",
+		"outputs": [
+			{
+				"internalType": "address[]",
+				"name": "",
+				"type": "address[]"
+			},
+			{
+				"internalType": "string[]",
+				"name": "",
+				"type": "string[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "adventureID",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "stepNumber",
+				"type": "uint256"
+			}
+		],
+		"name": "getStepChoices",
+		"outputs": [
+			{
+				"internalType": "uint256[]",
+				"name": "",
+				"type": "uint256[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "adventureID",
+				"type": "uint256"
+			}
+		],
+		"name": "getStepResults",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "",
+				"type": "uint256[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "adventureID",
+				"type": "uint256"
+			}
+		],
+		"name": "getWinnerCount",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "adventureID",
+				"type": "uint256"
+			}
+		],
+		"name": "getWinners",
+		"outputs": [
+			{
+				"internalType": "address[]",
+				"name": "",
+				"type": "address[]"
+			},
+			{
+				"internalType": "string[]",
+				"name": "",
+				"type": "string[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "adventureID",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "stepNumber",
+				"type": "uint256"
+			}
+		],
+		"name": "getYourChoice",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "registeredAdventurers",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "isAlive",
+				"type": "bool"
+			},
+			{
+				"internalType": "string",
+				"name": "pseudo",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "currentStep",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+]

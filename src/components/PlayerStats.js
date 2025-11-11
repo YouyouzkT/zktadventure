@@ -14,7 +14,7 @@ function PlayerStats() {
   const [deadPlayers, setDeadPlayers] = useState([]);
   const [winnerPlayers, setWinnerPlayers] = useState([]);
   const [playerStatus, setPlayerStatus] = useState('');
-  const contractAddress = "0x0771c885A2257C62211730bf98E17817ABb9CbD5";
+  const contractAddress = "0xb9119B26031E73932FdfAC205D814bb2A73CfcB2";
 
   const getStats = async () => {
     if (web3 && adventureID) {

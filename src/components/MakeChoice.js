@@ -12,7 +12,7 @@ function MakeChoice() {
   const [isMakingChoice, setIsMakingChoice] = useState(false);
   const [availableChoices, setAvailableChoices] = useState([]);
   const [yourChoice, setYourChoice] = useState(null);
-  const contractAddress = "0x0771c885A2257C62211730bf98E17817ABb9CbD5";
+  const contractAddress = "0xb9119B26031E73932FdfAC205D814bb2A73CfcB2";
 
   useEffect(() => {
     if (web3 && account && adventureID && stepNumber) {
